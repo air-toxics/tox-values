@@ -1,0 +1,133 @@
+---
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+dt_options = list(dom          = '<"pull-right" B> frtip',  
+                  ordering     = T, 
+                  lengthChange = F, 
+                  pageLength   = 20,
+                  buttons      = list(list(extend = 'csv',
+                                           text = "Download Excel/CSV",
+                                           title = "Air toxicity values",
+                                           filename = 'MPCA air toxicity values.csv'), 
+                                      list(extend = 'pdf',
+                                           text = "PDF",
+                                           title = "Air toxicity values",
+                                           pageSize = 'A4',
+                                           orientation = 'landscape',
+                                           filename = 'MPCA air toxicity values.pdf'), 
+                                      list(extend = 'print',
+                                           text = "Print",
+                                            title = "Air toxicity values")
+                  ))
+
+```
+
+
+<style>
+.blue {background-color: #e6f0ff; border-radius: 5px; padding: 20px;}
+body {margin-left: 0px;}
+p {font-size: 17px;}
+.dataTables_filter {margin-right: 12px;}
+.dt-buttons a {margin-left: 8px; background-color: #e6f0ff; margin-top: -3px;} 
+.pull-right {float: right; margin-top: 0;}
+th {font-size 12px;}
+h2 {margin-top: 22px;}
+h3 {margin-top: 22px; margin-bottom: 22px;}
+
+code {
+   background-color: inherit;
+   color: #337ab7;
+}
+
+</style>
+
+
+## Ambient air toxicity values used by MPCA
+
+_Updated `r format(Sys.Date(), "%B %d, %Y")`_
+
+<br>
+
+#### All values in units of _ug/m3_.
+
+
+```{r rass, echo = F, warning = F, message = F}
+#An Excel table of the values may be found in the `ToxValues` tab of the [Risk Assessment Spreadsheet](https://www.pca.state.mn.us/air/aera-risk-screening-rass-and-qchi).
+
+library(readxl)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(DT)
+
+rass <- read_excel("X:/Agency_Files/Outcomes/Risk_Eval_Air_Mod/_Air_Risk_Evaluation/AERA program/RASS/AERA RASS (aq9-22-7) 2019-02.xlsx", "Tox Values", skip = 19, n_max = 372, col_names = T)
+
+rass <- rass %>%
+  select(`CAS # or MPCA#`, `Chemical Name`, `Tox Value Source..6`, `Acute Air Conc. (ug/m3)`, `Tox Value Source..13`, `10-5 Cancer-based Air Conc (ug/m3)`, `Tox Value Source..19`, `Reference Conc. (ug/m3)..20`) %>%
+  rename(CAS = `CAS # or MPCA#`, 
+        `Acute Air Concentration` = `Acute Air Conc. (ug/m3)`,
+        `Acute Air Reference` = `Tox Value Source..6`,
+         `Cancer Based Air Concentration` = `10-5 Cancer-based Air Conc (ug/m3)`,
+         `Cancer Based Air Reference` = `Tox Value Source..13`,
+         `Non-Cancer Chronic Air Concentration` = `Reference Conc. (ug/m3)..20`,
+         `Non-Cancer Chronic Air Reference` = `Tox Value Source..19`) %>%
+  mutate(`Acute Air Concentration` = round(as.numeric(`Acute Air Concentration`), digits = 2),
+         `Cancer Based Air Concentration` = round(as.numeric(`Cancer Based Air Concentration`), digits = 2),
+         `Non-Cancer Chronic Air Concentration` = round(as.numeric(`Non-Cancer Chronic Air Concentration`), digits = 2)) %>%
+  filter(!is.na(CAS)) 
+
+rass <- rass %>%
+  mutate(`Acute Air Concentration` = ifelse(is.na(`Acute Air Concentration`), " ", `Acute Air Concentration`),
+         `Cancer Based Air Concentration` = ifelse(is.na(`Cancer Based Air Concentration`), " ", `Cancer Based Air Concentration`),
+        `Non-Cancer Chronic Air Concentration` =  ifelse(is.na(`Non-Cancer Chronic Air Concentration`), " ", `Non-Cancer Chronic Air Concentration`),
+        `Acute Air Reference` = ifelse(is.na(`Acute Air Reference`), " ", `Acute Air Reference`),
+         `Cancer Based Air Reference` = ifelse(is.na(`Cancer Based Air Reference`), " ", `Cancer Based Air Reference`),
+        `Non-Cancer Chronic Air Reference` =  ifelse(is.na(`Non-Cancer Chronic Air Reference`), " ", `Non-Cancer Chronic Air Reference`))
+
+if(F) {                                           
+DT::datatable(rass, 
+              rownames   = F,
+              extensions = "Buttons",
+              options    = dt_options) %>% 
+    formatStyle(columns = 1:ncol(rass), fontSize = '90%')
+}
+
+# Reorder columns
+rass <- rass[ , c(1:2, 4,8,6,3,7,5)]
+
+kable(rass) %>%
+ kable_styling(bootstrap_options = c("striped", "hover"))
+
+```
+
+<br>
+
+<div class = "blue">
+
+## Toxicity Value References
+</div>
+
+```{r acronym table, echo = F, message = F}
+names <- c("Acronym", "Source name", "Web link")
+hbvs <- c("HBV or RAA", "MDH Health Based Value or Risk Assessment Advice", "`www.health.state.mn.us/communities/environment/risk/guidance/air/table.html`")
+hrvs <- c("HRV", "MDH Health Risk Value", "`www.health.state.mn.us/communities/environment/risk/guidance/air/table.html`")
+calepa <- c("Cal EPA", "California Environmental Protection Agency Office of Environmental Health Hazard", "`http://oehha.ca.gov/air/hot_spots/`")
+iris <- c("IRIS", "USEPA Integrated Risk Information System", "`www.epa.gov/IRIS/`")
+pprtv <- c("PPRTV", "EPA Provisional Peer Reviewed Toxicity Values for Superfund", "`http://hhpprtv.ornl.gov/`")
+
+acronym_table <- rbind(names, hbvs, hrvs, iris, calepa, pprtv)
+acronym_table <- data.frame(acronym_table, row.names = NULL)
+names(acronym_table) = as.character(unlist(acronym_table[1, ])) # the first row will be the header
+acronym_table = acronym_table[-1, ]  
+acronym_table <- data.frame(acronym_table, row.names = NULL, check.names = FALSE)
+
+#print(datatable(acronym_table, rownames = FALSE, filter="top", options = list(pageLength = 5, scrollX = T)))
+kable(acronym_table) %>%
+ kable_styling(bootstrap_options = c("striped", "hover"))
+```
+

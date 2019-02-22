@@ -5,7 +5,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-
 dt_options = list(dom          = '<"pull-right" B> frtip',  
                   ordering     = T, 
                   lengthChange = F, 
@@ -24,7 +23,6 @@ dt_options = list(dom          = '<"pull-right" B> frtip',
                                            text = "Print",
                                             title = "Air toxicity values")
                   ))
-
 ```
 
 
@@ -58,37 +56,32 @@ _Updated `r format(Sys.Date(), "%B %d, %Y")`_
 
 ```{r rass, echo = F, warning = F, message = F}
 #An Excel table of the values may be found in the `ToxValues` tab of the [Risk Assessment Spreadsheet](https://www.pca.state.mn.us/air/aera-risk-screening-rass-and-qchi).
-
 library(readxl)
 library(knitr)
 library(kableExtra)
 library(dplyr)
 library(DT)
-
 rass <- read_excel("X:/Agency_Files/Outcomes/Risk_Eval_Air_Mod/_Air_Risk_Evaluation/AERA program/RASS/AERA RASS (aq9-22-7) 2019-02.xlsx", "Tox Values", skip = 19, n_max = 372, col_names = T)
-
 rass <- rass %>%
   select(`CAS # or MPCA#`, `Chemical Name`, `Tox Value Source..6`, `Acute Air Conc. (ug/m3)`, `Tox Value Source..13`, `10-5 Cancer-based Air Conc (ug/m3)`, `Tox Value Source..19`, `Reference Conc. (ug/m3)..20`) %>%
   rename(CAS = `CAS # or MPCA#`, 
-        `Acute Air Concentration` = `Acute Air Conc. (ug/m3)`,
-        `Acute Air Reference` = `Tox Value Source..6`,
-         `Cancer Based Air Concentration` = `10-5 Cancer-based Air Conc (ug/m3)`,
-         `Cancer Based Air Reference` = `Tox Value Source..13`,
-         `Non-Cancer Chronic Air Concentration` = `Reference Conc. (ug/m3)..20`,
-         `Non-Cancer Chronic Air Reference` = `Tox Value Source..19`) %>%
-  mutate(`Acute Air Concentration` = round(as.numeric(`Acute Air Concentration`), digits = 2),
-         `Cancer Based Air Concentration` = round(as.numeric(`Cancer Based Air Concentration`), digits = 2),
-         `Non-Cancer Chronic Air Concentration` = round(as.numeric(`Non-Cancer Chronic Air Concentration`), digits = 2)) %>%
+        `Acute air concentration` = `Acute Air Conc. (ug/m3)`,
+        `Acute air reference` = `Tox Value Source..6`,
+         `Cancer based air concentration` = `10-5 Cancer-based Air Conc (ug/m3)`,
+         `Cancer based air reference` = `Tox Value Source..13`,
+         `Non-cancer chronic air concentration` = `Reference Conc. (ug/m3)..20`,
+         `Non-cancer chronic air reference` = `Tox Value Source..19`) %>%
+  mutate(`Acute air concentration` = round(as.numeric(`Acute air concentration`), digits = 4),
+         `Cancer based air concentration` = round(as.numeric(`Cancer based air concentration`), digits = 4),
+         `Non-cancer chronic air concentration` = round(as.numeric(`Non-cancer chronic air concentration`), digits = 4)) %>%
   filter(!is.na(CAS)) 
-
 rass <- rass %>%
-  mutate(`Acute Air Concentration` = ifelse(is.na(`Acute Air Concentration`), " ", `Acute Air Concentration`),
-         `Cancer Based Air Concentration` = ifelse(is.na(`Cancer Based Air Concentration`), " ", `Cancer Based Air Concentration`),
-        `Non-Cancer Chronic Air Concentration` =  ifelse(is.na(`Non-Cancer Chronic Air Concentration`), " ", `Non-Cancer Chronic Air Concentration`),
-        `Acute Air Reference` = ifelse(is.na(`Acute Air Reference`), " ", `Acute Air Reference`),
-         `Cancer Based Air Reference` = ifelse(is.na(`Cancer Based Air Reference`), " ", `Cancer Based Air Reference`),
-        `Non-Cancer Chronic Air Reference` =  ifelse(is.na(`Non-Cancer Chronic Air Reference`), " ", `Non-Cancer Chronic Air Reference`))
-
+  mutate(`Acute air concentration` = ifelse(is.na(`Acute air concentration`), " ", `Acute air concentration`),
+         `Cancer based air concentration` = ifelse(is.na(`Cancer based air concentration`), " ", `Cancer based air concentration`),
+        `Non-cancer chronic air concentration` =  ifelse(is.na(`Non-cancer chronic air concentration`), " ", `Non-cancer chronic air concentration`),
+        `Acute air reference` = ifelse(is.na(`Acute air reference`), " ", `Acute air reference`),
+         `Cancer based air reference` = ifelse(is.na(`Cancer based air reference`), " ", `Cancer based air reference`),
+        `Non-cancer chronic air reference` =  ifelse(is.na(`Non-cancer chronic air reference`), " ", `Non-cancer chronic air reference`))
 if(F) {                                           
 DT::datatable(rass, 
               rownames   = F,
@@ -96,13 +89,10 @@ DT::datatable(rass,
               options    = dt_options) %>% 
     formatStyle(columns = 1:ncol(rass), fontSize = '90%')
 }
-
 # Reorder columns
-rass <- rass[ , c(1:2, 4,8,6,3,7,5)]
-
+rass <- rass[ , c(1:2, 4, 3,6,5,8,7)]
 kable(rass) %>%
  kable_styling(bootstrap_options = c("striped", "hover"))
-
 ```
 
 <br>
@@ -119,15 +109,12 @@ hrvs <- c("HRV", "MDH Health Risk Value", "`www.health.state.mn.us/communities/e
 calepa <- c("Cal EPA", "California Environmental Protection Agency Office of Environmental Health Hazard", "`http://oehha.ca.gov/air/hot_spots/`")
 iris <- c("IRIS", "USEPA Integrated Risk Information System", "`www.epa.gov/IRIS/`")
 pprtv <- c("PPRTV", "EPA Provisional Peer Reviewed Toxicity Values for Superfund", "`http://hhpprtv.ornl.gov/`")
-
 acronym_table <- rbind(names, hbvs, hrvs, iris, calepa, pprtv)
 acronym_table <- data.frame(acronym_table, row.names = NULL)
 names(acronym_table) = as.character(unlist(acronym_table[1, ])) # the first row will be the header
 acronym_table = acronym_table[-1, ]  
 acronym_table <- data.frame(acronym_table, row.names = NULL, check.names = FALSE)
-
 #print(datatable(acronym_table, rownames = FALSE, filter="top", options = list(pageLength = 5, scrollX = T)))
 kable(acronym_table) %>%
  kable_styling(bootstrap_options = c("striped", "hover"))
 ```
-
